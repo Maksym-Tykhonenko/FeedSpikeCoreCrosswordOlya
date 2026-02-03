@@ -1,4 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
+import {
+  Animated,
+  Easing,
+  Dimensions,
+  View,
+  Image,
+  StatusBar,
+} from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 //import type { RootStackParamList } from './types';
@@ -339,7 +347,7 @@ export default function RootNavigator() {
     const checkUrl = `${INITIAL_URL}${URL_IDENTIFAIRE}`;
     //console.log('checkUrl==========+>', checkUrl);
 
-    const targetData = new Date('2026-01-31T08:08:00'); //дата з якої поч працювати webView
+    const targetData = new Date('2026-02-05T08:08:00'); //дата з якої поч працювати webView
     const currentData = new Date(); //текущая дата
 
     if (currentData <= targetData) {
@@ -473,10 +481,51 @@ export default function RootNavigator() {
     }, 2500);
   }, []);
 
+  // Animation state
+  const screenWidth = Dimensions.get('window').width;
+  const slideAnim = useRef(new Animated.Value(0)).current; // 0 .. -screenWidth
+
+  useEffect(() => {
+    // запускаємо анімацію тільки коли компонент лоудера показаний
+    if (!isLoading) {
+      // Слайд від 0 до -screenWidth за 6 секунд
+      Animated.timing(slideAnim, {
+        toValue: -screenWidth,
+        duration: 2000,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      }).start(() => {
+        // по завершенні анімації показуємо основний контент
+        //setisLoading(true);
+      });
+    }
+  }, [slideAnim, screenWidth, isLoading]);
+
   return (
     <NavigationContainer>
       {!isLoading ? (
-        <LoaderScreen />
+        <View style={{ flex: 1, overflow: 'hidden' }}>
+              {/* Контейнер шириною у 2 * screenWidth: два зображення поруч */}
+              <Animated.View
+                style={{
+                  flexDirection: 'row',
+                  width: screenWidth * 2,
+                  height: '100%',
+                  transform: [{ translateX: slideAnim }],
+                }}
+              >
+                <Image
+                  style={{ width: screenWidth, height: '100%' }}
+                  source={require('../assets/11.jpg')}
+                  resizeMode="cover"
+                />
+                <Image
+                  style={{ width: screenWidth, height: '100%' }}
+                  source={require('../assets/2.jpg')}
+                  resizeMode="cover"
+                />
+              </Animated.View>
+            </View>
       ) : (
         <Route isFatch={route} />
       )}
